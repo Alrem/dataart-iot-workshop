@@ -71,7 +71,7 @@ public class DeviceViewModel extends ViewModel {
                 .repeatUntil(pollingSupplier)
                 //Retry if we've got error
                 .retryWhen(errors ->
-                        errors.flatMap(error -> Observable.timer(2, TimeUnit.SECONDS)))
+                        errors.flatMap(error -> Observable.timer(500, TimeUnit.MILLISECONDS)))
                 .compose(applySchedulers())
                 //Send temperature value to the UI
                 .subscribe(temperature::setValue, Throwable::printStackTrace);
