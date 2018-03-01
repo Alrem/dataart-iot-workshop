@@ -9,19 +9,14 @@ import com.github.devicehive.client.model.DHResponse;
 import com.github.devicehive.client.model.Parameter;
 import com.github.devicehive.client.service.DeviceCommand;
 import com.github.devicehive.client.service.DeviceHive;
-import com.google.gson.JsonObject;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.BooleanSupplier;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import timber.log.Timber;
 
 public class DeviceViewModel extends ViewModel {
 
@@ -45,7 +40,8 @@ public class DeviceViewModel extends ViewModel {
     private MutableLiveData<Float> temperature = new MutableLiveData<>();
     private MutableLiveData<Boolean> ledStatusOn = new MutableLiveData<>();
     private MutableLiveData<Boolean> ledStatusOff = new MutableLiveData<>();
-    private int retryCount = 0;
+    private int ledDelayInMillis = 100;
+    private int tempDelayInMillis = 200;
     private int maxRetries = 5;
 
     public void initServer(Context context) {
@@ -59,20 +55,16 @@ public class DeviceViewModel extends ViewModel {
         pollingRepeat = false;
 
         Observable.just(id)
+                //This function is getting Device Object by id
                 .map(deviceId -> deviceHive.getDevice(deviceId).getData())
+                //This function is sending command to the Device that we got before
                 .map(device -> {
                     Parameter parameter = new Parameter(TEMPERATURE_PARAMETER_KEY, TEMPERATURE_PARAMETER_VALUE);
                     return device.sendCommand(TEMPERATURE_COMMAND_NAME,
-                            Collections.singletonList(parameter)).getData();
+                            Collections.singletonList(parameter));
                 })
-                .delay(1, TimeUnit.SECONDS)
-                .map(command -> {
-                    Timber.d(command.fetchCommandResult().getData().toString());
-                    JsonObject object = command.fetchCommandResult().getData();
-                    return object.get(KEY_TEMPERATURE_RESULT).getAsFloat();
-                })
+                .flatMap(this::getRetryForTemperature)
                 .repeatUntil(supplier)
-                .retryWhen(errors -> errors.flatMap(error -> Observable.timer(2, TimeUnit.SECONDS)))
                 .compose(applySchedulers())
                 .subscribe(temperature::setValue, Throwable::printStackTrace);
         return temperature;
@@ -121,15 +113,12 @@ public class DeviceViewModel extends ViewModel {
     private Observable<String> getRetry(DHResponse<DeviceCommand> deviceCommandDHResponse) {
         return Observable.just(deviceCommandDHResponse)
                 .map(cmd -> cmd.getData().fetchCommandStatus().getData())
-                .retryWhen(errors -> errors.flatMap((Function<Throwable, ObservableSource<?>>) error -> {
-                    if (error instanceof NullPointerException) {
-                        if (++retryCount < maxRetries) {
-                            return Observable.timer(100, TimeUnit.MILLISECONDS);
-                        } else {
-                            retryCount = 0;
-                        }
-                    }
-                    return Observable.error(error);
-                }));
+                .retryWhen(new RetryWithDelay(maxRetries, ledDelayInMillis));
+    }
+
+    private Observable<Float> getRetryForTemperature(DHResponse<DeviceCommand> commandDHResponse) {
+        return Observable.just(commandDHResponse)
+                .map(cmd -> cmd.getData().fetchCommandResult().getData().get(KEY_TEMPERATURE_RESULT).getAsFloat())
+                .retryWhen(new RetryWithDelay(maxRetries, tempDelayInMillis));
     }
 }
