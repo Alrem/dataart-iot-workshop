@@ -81,6 +81,7 @@ public class DeviceViewModel extends ViewModel {
 
 
     public void stopPolling(LifecycleOwner owner) {
+        temperature.setValue(0f);
         temperature.removeObservers(owner);
         pollingRepeat = true;
     }
