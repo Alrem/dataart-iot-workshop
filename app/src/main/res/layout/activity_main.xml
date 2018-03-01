@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.dataart.workshop.iot.androidiot.MainActivity">
+
+    <TextView
+        android:id="@+id/temp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/margin_40dp"
+        android:text="@string/temperature_default_value"
+        android:textColor="@color/colorAccent"
+        android:textSize="@dimen/temp_text_size"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/tempControlsContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/temp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/half_margin"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/get"
+            style="?android:attr/buttonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_10dp"
+            android:padding="@dimen/default_margin"
+            android:text="@string/start_polling"
+            android:theme="@style/PrimaryButton" />
+
+        <Button
+            android:id="@+id/stop"
+            style="?android:attr/buttonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_10dp"
+            android:padding="@dimen/default_margin"
+            android:text="@string/stop_polling"
+            android:theme="@style/PrimaryButton" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/ledStatus"
+        android:layout_width="@dimen/led_image_size"
+        android:layout_height="@dimen/led_image_size"
+        android:layout_below="@+id/tempControlsContainer"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_led_lamp_red_off" />
+
+    <LinearLayout
+        android:id="@+id/ledControlsContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/ledStatus"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/half_margin"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/ledOn"
+            style="?android:attr/buttonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_10dp"
+            android:padding="@dimen/default_margin"
+            android:text="@string/on"
+            android:theme="@style/PrimaryButton" />
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/ledOff"
+            style="?android:attr/buttonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_10dp"
+            android:padding="@dimen/default_margin"
+            android:text="@string/off"
+            android:theme="@style/PrimaryButton" />
+    </LinearLayout>
+
+</RelativeLayout>

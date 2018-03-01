@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Android IoT</string>
+    <!--TODO Enter device id-->
+    <string name="deviceId"></string>
+    <string name="temperature_format">%.02f °C</string>
+    <string name="temperature_default_value" formatted="false">0.0 °C</string>
+    <!--TODO Enter server url-->
+    <string name="server_url"></string>
+    <!--TODO Enter refresh token-->
+    <string name="refresh_token" formatted="false"></string>
+    <string name="start_polling">Start Polling</string>
+    <string name="stop_polling">Stop Polling</string>
+    <string name="space"><![CDATA[&#160;]]></string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+</resources>

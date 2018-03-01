@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_margin">16dp</dimen>
+    <dimen name="margin_40dp">40dp</dimen>
+    <dimen name="half_margin">8dp</dimen>
+    <dimen name="margin_10dp">10dp</dimen>
+    <dimen name="led_image_size">120dp</dimen>
+    <dimen name="temp_text_size">30sp</dimen>
+</resources>
