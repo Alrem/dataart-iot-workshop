@@ -25,7 +25,10 @@ public class MainActivity extends AppCompatActivity {
                         .observe(this, temperature -> temp.setText(
                                 String.format(getString(R.string.temperature_format), temperature))
                         ));
-        findViewById(R.id.stop).setOnClickListener(v -> model.stopPolling());
+        findViewById(R.id.stop).setOnClickListener(v -> {
+            model.stopPolling(this);
+            temp.setText(String.format(getString(R.string.temperature_format), 0f));
+        });
 
 
         ImageView ledStatus = findViewById(R.id.ledStatus);
@@ -46,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         if (model != null) {
-            model.stopPolling();
+            model.stopPolling(this);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.dataart.workshop.iot.androidiot;
 
+import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
@@ -11,6 +12,7 @@ import com.github.devicehive.client.service.DeviceCommand;
 import com.github.devicehive.client.service.DeviceHive;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
@@ -67,6 +69,9 @@ public class DeviceViewModel extends ViewModel {
                 .flatMap(this::getRetryForTemperature)
                 //If pollingSupplier returns true we repeat actions (Get Device, Send Command, Read Result,Send Result to UI)
                 .repeatUntil(pollingSupplier)
+                //Retry if we've got error
+                .retryWhen(errors ->
+                        errors.flatMap(error -> Observable.timer(2, TimeUnit.SECONDS)))
                 .compose(applySchedulers())
                 //Send temperature value to the UI
                 .subscribe(temperature::setValue, Throwable::printStackTrace);
@@ -75,7 +80,8 @@ public class DeviceViewModel extends ViewModel {
     }
 
 
-    public void stopPolling() {
+    public void stopPolling(LifecycleOwner owner) {
+        temperature.removeObservers(owner);
         pollingRepeat = true;
     }
 
