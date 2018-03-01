@@ -14,7 +14,7 @@ You can see the screenshots of the Application below:
 
 <img src="https://github.com/edubovik/dataart-iot-workshop/blob/master/images/1.png?raw=true" data-canonical-src="https://github.com/edubovik/dataart-iot-workshop/blob/master/images/1.png?raw=true" width="200" height="370" /> <img src="https://github.com/edubovik/dataart-iot-workshop/blob/master/images/2.png?raw=true" data-canonical-src="https://github.com/edubovik/dataart-iot-workshop/blob/master/images/2.png?raw=true" width="200" height="370" />
 
-You just have to add 3 parameters to the strings.xml to make this example work:
+You just have to change 3 parameters inside strings.xml to make this example work:
 ```xml
 <string name="deviceId">DEVICE_ID</string>
 <string name="server_url">SERVER_URL</string>
