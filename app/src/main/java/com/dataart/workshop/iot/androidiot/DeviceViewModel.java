@@ -5,7 +5,9 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 import android.content.Context;
 
+import com.github.devicehive.client.model.DHResponse;
 import com.github.devicehive.client.model.Parameter;
+import com.github.devicehive.client.service.DeviceCommand;
 import com.github.devicehive.client.service.DeviceHive;
 import com.google.gson.JsonObject;
 
@@ -13,9 +15,11 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.BooleanSupplier;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
@@ -32,6 +36,7 @@ public class DeviceViewModel extends ViewModel {
     private static final String LED_COMMAND_NAME = "gpio/write";
     private static final String LED_TURN_ON_PARAMETER_VALUE = "1";
     private static final String LED_TURN_OFF_PARAMETER_VALUE = "0";
+    public static final String OK = "ok";
 
     private DeviceHive deviceHive;
     private boolean pollingRepeat = false;
@@ -40,6 +45,8 @@ public class DeviceViewModel extends ViewModel {
     private MutableLiveData<Float> temperature = new MutableLiveData<>();
     private MutableLiveData<Boolean> ledStatusOn = new MutableLiveData<>();
     private MutableLiveData<Boolean> ledStatusOff = new MutableLiveData<>();
+    private int retryCount = 0;
+    private int maxRetries = 5;
 
     public void initServer(Context context) {
         deviceHive = DeviceHive.getInstance().init(
@@ -81,9 +88,11 @@ public class DeviceViewModel extends ViewModel {
         Observable.just(id).map(deviceId -> deviceHive.getDevice(deviceId).getData())
                 .map(device -> {
                     Parameter parameter = new Parameter(LED_PARAMETER_KEY, LED_TURN_OFF_PARAMETER_VALUE);
-                    return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter)).isSuccessful();
+                    return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter));
 
                 })
+                .flatMap(this::getRetry)
+                .map(c -> c.equalsIgnoreCase(OK))
                 .compose(applySchedulers())
                 .subscribe(success -> ledStatusOff.setValue(success), Throwable::printStackTrace);
         return ledStatusOff;
@@ -94,9 +103,11 @@ public class DeviceViewModel extends ViewModel {
                 .map(deviceId -> deviceHive.getDevice(deviceId).getData())
                 .map(device -> {
                     Parameter parameter = new Parameter(LED_PARAMETER_KEY, LED_TURN_ON_PARAMETER_VALUE);
-                    return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter)).isSuccessful();
+                    return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter));
 
                 })
+                .flatMap(this::getRetry)
+                .map(c -> c.equalsIgnoreCase(OK))
                 .compose(applySchedulers())
                 .subscribe(success -> ledStatusOn.setValue(success), Throwable::printStackTrace);
         return ledStatusOn;
@@ -107,4 +118,18 @@ public class DeviceViewModel extends ViewModel {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    private Observable<String> getRetry(DHResponse<DeviceCommand> deviceCommandDHResponse) {
+        return Observable.just(deviceCommandDHResponse)
+                .map(cmd -> cmd.getData().fetchCommandStatus().getData())
+                .retryWhen(errors -> errors.flatMap((Function<Throwable, ObservableSource<?>>) error -> {
+                    if (error instanceof NullPointerException) {
+                        if (++retryCount < maxRetries) {
+                            return Observable.timer(100, TimeUnit.MILLISECONDS);
+                        } else {
+                            retryCount = 0;
+                        }
+                    }
+                    return Observable.error(error);
+                }));
+    }
 }
