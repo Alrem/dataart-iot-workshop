@@ -7,4 +7,4 @@ Dataart IoT Workshop
 
 [DataArt](http://dataart.com)
 
-Dataart IoT Workshop is an example of using DeviceHive java Library inside Android Application.
+Dataart IoT Workshop is an example of using DeviceHive Java Library inside Android Application.
