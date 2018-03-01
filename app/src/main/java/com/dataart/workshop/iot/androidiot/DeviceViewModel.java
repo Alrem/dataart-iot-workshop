@@ -35,7 +35,7 @@ public class DeviceViewModel extends ViewModel {
 
     private DeviceHive deviceHive;
     private boolean pollingRepeat = false;
-    private BooleanSupplier supplier = () -> pollingRepeat;
+    private BooleanSupplier pollingSupplier = () -> pollingRepeat;
 
     private MutableLiveData<Float> temperature = new MutableLiveData<>();
     private MutableLiveData<Boolean> ledStatusOn = new MutableLiveData<>();
@@ -57,16 +57,16 @@ public class DeviceViewModel extends ViewModel {
         Observable.just(id)
                 //This function is getting Device Object by id
                 .map(deviceId -> deviceHive.getDevice(deviceId).getData())
-                //This function is sending command to the Device that we got before
+                //This function is sending command to the Device witch we've got before
                 .map(device -> {
                     Parameter parameter = new Parameter(TEMPERATURE_PARAMETER_KEY, TEMPERATURE_PARAMETER_VALUE);
                     return device.sendCommand(TEMPERATURE_COMMAND_NAME,
                             Collections.singletonList(parameter));
                 })
-                //Retry if Device didn't send result to server
+                //Getting command Result and retry if Device didn't send result to server
                 .flatMap(this::getRetryForTemperature)
-                //Boolean key for repeat operation
-                .repeatUntil(supplier)
+                //If pollingSupplier returns true we repeat actions (GetDevice, Send Command, Read Result,Send Result to UI)
+                .repeatUntil(pollingSupplier)
                 .compose(applySchedulers())
                 //Send temperature value to the UI
                 .subscribe(temperature::setValue, Throwable::printStackTrace);
@@ -89,7 +89,7 @@ public class DeviceViewModel extends ViewModel {
                     return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter));
 
                 })
-                //Retry if Device didn't send status to server
+                //Getting command Status and Retry if Device didn't send status to server
                 .flatMap(this::getRetryForLED)
                 //Check if status is OK
                 .map(c -> c.equalsIgnoreCase(OK))
@@ -109,7 +109,7 @@ public class DeviceViewModel extends ViewModel {
                     return device.sendCommand(LED_COMMAND_NAME, Collections.singletonList(parameter));
 
                 })
-                //Retry if Device didn't send status to server
+                //Getting command Status and Retry if Device didn't send status to server
                 .flatMap(this::getRetryForLED)
                 //Check if status is OK
                 .map(c -> c.equalsIgnoreCase(OK))
