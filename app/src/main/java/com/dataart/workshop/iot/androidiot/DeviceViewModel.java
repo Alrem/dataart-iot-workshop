@@ -65,7 +65,7 @@ public class DeviceViewModel extends ViewModel {
                 })
                 //Getting command Result and retry if Device didn't send result to server
                 .flatMap(this::getRetryForTemperature)
-                //If pollingSupplier returns true we repeat actions (GetDevice, Send Command, Read Result,Send Result to UI)
+                //If pollingSupplier returns true we repeat actions (Get Device, Send Command, Read Result,Send Result to UI)
                 .repeatUntil(pollingSupplier)
                 .compose(applySchedulers())
                 //Send temperature value to the UI
