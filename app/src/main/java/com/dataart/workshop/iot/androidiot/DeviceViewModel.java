@@ -10,6 +10,7 @@ import com.github.devicehive.client.model.DHResponse;
 import com.github.devicehive.client.model.Parameter;
 import com.github.devicehive.client.service.DeviceCommand;
 import com.github.devicehive.client.service.DeviceHive;
+import com.google.gson.JsonObject;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.schedulers.Schedulers;
 
@@ -45,6 +47,7 @@ public class DeviceViewModel extends ViewModel {
     private int ledDelayInMillis = 100;
     private int tempDelayInMillis = 200;
     private int maxRetries = 5;
+    private Disposable polling;
 
     public void initServer(Context context) {
         deviceHive = DeviceHive.getInstance().init(
@@ -55,8 +58,8 @@ public class DeviceViewModel extends ViewModel {
 
     public LiveData<Float> startPolling(String id) {
         pollingRepeat = false;
-
-        Observable.just(id)
+        dispose();
+        polling = Observable.just(id)
                 //This function is getting Device Object by id
                 .map(deviceId -> deviceHive.getDevice(deviceId).getData())
                 //This function is sending command to the Device witch we've got before
@@ -81,9 +84,16 @@ public class DeviceViewModel extends ViewModel {
 
 
     public void stopPolling(LifecycleOwner owner) {
+        dispose();
         temperature.setValue(0f);
         temperature.removeObservers(owner);
         pollingRepeat = true;
+    }
+
+    private void dispose() {
+        if (polling != null && !polling.isDisposed()) {
+            polling.dispose();
+        }
     }
 
     public LiveData<Boolean> sendOffCommand(String id) {
@@ -135,14 +145,27 @@ public class DeviceViewModel extends ViewModel {
     //Fetch command status and retry if status is null
     private Observable<String> getRetryForLED(DHResponse<DeviceCommand> deviceCommandDHResponse) {
         return Observable.just(deviceCommandDHResponse)
-                .map(cmd -> cmd.getData().fetchCommandStatus().getData())
-                .retryWhen(new RetryWithDelay(maxRetries, ledDelayInMillis));
+                .map(cmd -> {
+                    String data = cmd.getData().fetchCommandStatus().getData();
+                    if (data == null) {
+                        throw new NullResponseException();
+                    }
+                    return data;
+                }).retryWhen(new RetryWithDelay(maxRetries, tempDelayInMillis));
     }
 
     //Fetch command result and retry if result is null
     private Observable<Float> getRetryForTemperature(DHResponse<DeviceCommand> commandDHResponse) {
         return Observable.just(commandDHResponse)
-                .map(cmd -> cmd.getData().fetchCommandResult().getData().get(KEY_TEMPERATURE_RESULT).getAsFloat())
-                .retryWhen(new RetryWithDelay(maxRetries, tempDelayInMillis));
+
+                .map(cmd -> {
+                    JsonObject object = cmd.getData().fetchCommandResult().getData();
+                    if (object.isJsonNull() || !object.has(KEY_TEMPERATURE_RESULT)) {
+                        throw new NullResponseException();
+                    }
+
+                    return object.get(KEY_TEMPERATURE_RESULT).getAsFloat();
+                }).retryWhen(new RetryWithDelay(maxRetries, tempDelayInMillis));
+
     }
 }

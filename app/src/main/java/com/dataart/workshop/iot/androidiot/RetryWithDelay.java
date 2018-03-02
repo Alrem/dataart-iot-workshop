@@ -20,7 +20,7 @@ public class RetryWithDelay implements Function<Observable<? extends Throwable>,
     @Override
     public Observable<?> apply(Observable<? extends Throwable> observable) throws Exception {
         return observable.flatMap((Function<Throwable, Observable<?>>) throwable -> {
-            if (throwable instanceof NullPointerException) {
+            if (throwable instanceof NullResponseException) {
                 if (++retryCount < maxRetries) {
                     // When this Observable calls onNext, the original
                     // Observable will be retried (i.e. re-subscribed).
